@@ -8,10 +8,10 @@
 #include <ctype.h>
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+// #ifdef __cplusplus
+// extern "C"
+// {
+// #endif
 
 static inline int val_to_char(int v)
 {
@@ -322,6 +322,6 @@ int cpulist_parse(const char *str, cpu_set_t *set, size_t setsize, int fail)
 	return 0;
 }
 
-#ifdef __cplusplus
-}
-#endif
+// #ifdef __cplusplus
+// }
+// #endif

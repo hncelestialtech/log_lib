@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#if !HAVE_DECL_CPU_ALLOC
+#ifndef __USE_GNU
 
 # define CPU_ZERO_S(setsize, cpusetp) \
   do {									      \
@@ -47,10 +47,10 @@ extern int __cpuset_count_s(size_t setsize, const cpu_set_t *set);
 
 # define CPU_ALLOC_SIZE(count) \
 	  ((((count) + __NCPUBITS - 1) / __NCPUBITS) * sizeof (__cpu_mask))
-# define CPU_ALLOC(count)	(malloc(CPU_ALLOC_SIZE(count)))
+# define CPU_ALLOC(count)	(cpu_set_t*)(malloc(CPU_ALLOC_SIZE(count)))
 # define CPU_FREE(cpuset)	(free(cpuset))
 
-#endif /* !HAVE_DECL_CPU_ALLOC */
+#endif /* __USE_GNU */
 
 
 #define cpuset_nbits(setsize)	(8 * (setsize))
