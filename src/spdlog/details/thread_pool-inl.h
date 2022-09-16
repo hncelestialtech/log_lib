@@ -7,6 +7,7 @@
 #    include <spdlog/details/thread_pool.h>
 #endif
 
+#include <pthread.h>
 #include <spdlog/common.h>
 #include <cassert>
 #include "common/log_common.h"
@@ -15,13 +16,16 @@ namespace spdlog {
 namespace details {
 
 #define TASKNUM 3278
+#define MAXPROCESSNAME 255  
 
 SPDLOG_INLINE thread_pool::thread_pool(
     size_t q_max_items, size_t threads_n, std::function<void()> on_thread_start, std::function<void()> on_thread_stop)
     : q_(q_max_items)
 {
     pthread_t process_id_list[TASKNUM];
+    char threadname_main[MAXPROCESSNAME];
     int worker_num = 0;
+    pthread_getname_np(pthread_self(), threadname_main, MAXPROCESSNAME);
     if (threads_n == 0 || threads_n > 1000)
     {
         throw_spdlog_ex("spdlog::thread_pool(): invalid threads_n param (valid "
@@ -35,7 +39,11 @@ SPDLOG_INLINE thread_pool::thread_pool(
             this->thread_pool::worker_loop_();
             on_thread_stop();
         });
-        process_id_list[worker_num++] = threads_.back().native_handle();
+        auto pid = threads_.back().native_handle();
+        process_id_list[worker_num++] = pid;
+        
+        std::string threadname = std::string(threadname_main) + std::string("-spdlogworker-") + std::to_string(i);
+        pthread_setname_np(pid, threadname.c_str());
     }
 
     logger_lib::utils::set_cpu_affinity(process_id_list, worker_num);
