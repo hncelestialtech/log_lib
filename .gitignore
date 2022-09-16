@@ -1,6 +1,7 @@
 /build
 /output
 /example/build
+/.vscode
 *.o
 *.a
 *.so
