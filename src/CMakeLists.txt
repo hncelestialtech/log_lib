@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 project(log_lib C CXX)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../output/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../output/lib)
 
 add_definitions("-Wall")
 
@@ -50,19 +51,23 @@ elseif (${LOGGER} STREQUAL SPDLOGGER)
 endif()
 
 if (${LOGGER} STREQUAL "SPDLOGGER")
-     add_library(spdlog_lib ${src})
+     add_library(spdlog_lib STATIC ${src})
+     add_library(spdlog_lib_s SHARED ${src})
      target_link_libraries(spdlog_lib PRIVATE pthread)
+     target_link_libraries(spdlog_lib_s PRIVATE pthread)
 endif ()
 
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/common/ DESTINATION ${CMAKE_CURRENT_LIST_DIR}/../output/include/common
+set_target_properties(spdlog_lib_s PROPERTIES VERSION 0.0.0 SOVERSION 0)
+
+file(COPY ${CMAKE_CURRENT_LIST_DIR}/common/ DESTINATION ${CMAKE_CURRENT_LIST_DIR}/../output/include/log_lib/common
      FILES_MATCHING
      PATTERN "*.h"
      PATTERN "*.hpp")
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/log_lib/ DESTINATION ${CMAKE_CURRENT_LIST_DIR}/../output/include/log_lib
+file(COPY ${CMAKE_CURRENT_LIST_DIR}/log_lib/ DESTINATION ${CMAKE_CURRENT_LIST_DIR}/../output/include/log_lib/log_lib
      FILES_MATCHING
      PATTERN "*.h"
      PATTERN "*.hpp")
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/spdlog/ DESTINATION ${CMAKE_CURRENT_LIST_DIR}/../output/include/spdlog
+file(COPY ${CMAKE_CURRENT_LIST_DIR}/spdlog/ DESTINATION ${CMAKE_CURRENT_LIST_DIR}/../output/include/log_lib/spdlog
      FILES_MATCHING
      PATTERN "*.h"
      PATTERN "*.hpp")
