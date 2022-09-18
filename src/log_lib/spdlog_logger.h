@@ -5,11 +5,13 @@
 
 #include <string>
 #include <memory>
+#include <stdlib.h>
 
 #include "spdlog/logger.h"
 #include "spdlog/async.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "common/log_common.h"
+#include "log_lib/config_parser.h"
 
 #define DEBUG   spdlog::level::level_enum::debug
 #define INFO    spdlog::level::level_enum::info
@@ -41,23 +43,45 @@ do {    \
 using LoggerGuard = std::shared_ptr<spdlog::logger>;
 
 namespace logger_lib {
+
+namespace utils {
+    spdlog::level::level_enum get_log_level(std::string log_level)
+    {
+        if (strncmp("debug", log_level.c_str(), 5) == 0)
+            return DEBUG;
+        else if (strncmp("info", log_level.c_str(), 4) == 0)
+            return INFO;
+        else if (strncmp("warn", log_level.c_str(), 4) == 0)
+            return INFO;
+        else if (strncmp("err", log_level.c_str(), 3) == 0)
+            return INFO;
+        else {
+            fprintf(stderr, "Failed to parse log level %s, set level to INFO", log_level.c_str());
+            return INFO;
+        }
+    }
+}
+
 namespace details {
 
 class spdlogger
 {
 public:
 #define TASK_COMM_LEN  16
-    spdlogger()
+    spdlogger():config_("./config.json")
     {
-        char process_name[TASK_COMM_LEN];
-        pthread_getname_np(pthread_self(), process_name, TASK_COMM_LEN);
+        std::string cpuset_bind = config_.cpuset_bind;
+        setenv("LogCPUSet", cpuset_bind.c_str(), 1);
+
         std::string wall_time = logger_lib::utils::getWallClock();
-        std::string log_file = std::string("logs/") + std::string(process_name) + "-" + wall_time;
+        std::string log_file = config_.log_dir + "/" + std::string(process_name) + "-" + wall_time;
         logger_ = spdlog::basic_logger_mt<spdlog::async_factory>(process_name, log_file);
         if(logger_ == nullptr)
         {
             fprintf(stderr, "failed to create logger\n");
         }
+        auto level = utils::get_log_level(ocnfig_.log_level);
+        logger_->set_level(level);
     }
     LoggerGuard getLog()
     {
@@ -65,12 +89,15 @@ public:
     }
 private:
     LoggerGuard logger_;
+    ConfigParser config_;
 };
+
+} // detail
 
 class spd_factory
 {
 public:
-    static spdlogger& instance()
+    static details::spdlogger& instance()
     {
         return logger_;
     }
@@ -78,10 +105,9 @@ private:
     spd_factory()=delete;
     ~spd_factory()=delete;
 
-    static spdlogger logger_;
+    static details::spdlogger logger_;
 };
 
-} // detail
 } // logger_lib
 
 #endif // SPDLOG_LOGGER_H
