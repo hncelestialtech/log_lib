@@ -2,28 +2,45 @@
 #define SPDLOG_LOGGER_H
 
 #include <pthread.h>
+#include <stdlib.h>
 
 #include <string>
 #include <memory>
-#include <stdlib.h>
+#include <thread>
+#include <mutex>
+#include <utility>
 
 #include "spdlog/logger.h"
 #include "spdlog/async.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "common/log_common.h"
-#include "log_lib/config_parser.h"
+#include "log_lib/log_config.h"
 
-#define DEBUG   spdlog::level::level_enum::debug
-#define INFO    spdlog::level::level_enum::info
-#define WARNING spdlog::level::level_enum::warn
-#define ERROR   spdlog::level::level_enum::err
+#define SPDLOG_LEVEL spdlog::level::level_enum
+
+#define DEBUG   SPDLOG_LEVEL::debug
+#define INFO    SPDLOG_LEVEL::info
+#define WARNING SPDLOG_LEVEL::warn
+#define ERROR   SPDLOG_LEVEL::err
+
+extern std::once_flag log_init_flag;
+
+#define LOG_INIT(...)      \
+do {    \
+    std::call_once(log_init_flag, [&]{  \
+        logger_lib::LogConfig config{__VA_ARGS__};  \
+        logger_lib::logger = std::move(logger_lib::SpdFactory::create_logger(config));  \
+    }); \
+} while (0)
 
 #define LOG(log_level,...)  \
 do {    \
-    if ((int)log_level >= (int)INFO)  \
-        _SPD_SYNC_LOG(log_level,__VA_ARGS__);   \
-    else    \
-        _SPD_ASYNC_LOG(log_level, __VA_ARGS__); \
+    if (logger_lib::logger) {   \
+        if ((int)log_level >= (int)logger_lib::details::flush_level)  \
+            _SPD_SYNC_LOG(log_level,__VA_ARGS__);   \
+        else    \
+            _SPD_ASYNC_LOG(log_level, __VA_ARGS__); \
+    }   \
 } while (0)
 
 #define _SPD_SYNC_LOG(log_level,...)    \
@@ -32,15 +49,20 @@ do {    \
     SYNC;  \
 } while(0)
 
-#define _SPD_ASYNC_LOG(log_level,...) logger_lib::spd_factory::instance().getLog()->log(log_level, __VA_ARGS__)
+#define _SPD_ASYNC_LOG(log_level,...) do {  \
+    if (logger_lib::logger)   \
+        logger_lib::logger->getLog()->log(log_level, __VA_ARGS__);   \
+} while (0)
 
 #define SYNC _SPD_SYNC
-#define _SPD_SYNC logger_lib::spd_factory::instance().getLog()->flush()
+#define _SPD_SYNC logger_lib::logger->getLog()->flush()
 
 #define SET_LOG_LEVEL(log_level)  _SPD_ASYNC_SET_LEVEL(log_level)
 #define _SPD_ASYNC_SET_LEVEL(log_level)  logger_lib::spd_factory::instance().getLog()->set_level(log_level) 
 
-using LoggerGuard = std::shared_ptr<spdlog::logger>;
+#define SET_LOG_SYNC_LEVEL(log_level)   do {    \
+    logger_lib::details::flush_level = log_level;   \
+} while (0)
 
 namespace logger_lib {
 
@@ -64,11 +86,14 @@ namespace utils {
 
 namespace details {
 
-class spdlogger
+extern SPDLOG_LEVEL flush_level;
+
+class SpdLogger
 {
+    using LoggerGuard = std::shared_ptr<spdlog::logger>;
 public:
 #define TASK_COMM_LEN  16
-    spdlogger():config_("./config.json")
+    SpdLogger(const LogConfig& config):config_(config)
     {
         std::string cpuset_bind = config_.cpuset_bind;
         if (cpuset_bind != config_.null_config) {
@@ -96,23 +121,25 @@ public:
     }
 private:
     LoggerGuard logger_;
-    ConfigParser config_;
+    LogConfig config_;
 };
 
 } // detail
 
-class spd_factory
+using SpdLoggerGuard = std::unique_ptr<details::SpdLogger>;
+
+extern SpdLoggerGuard logger;
+
+class SpdFactory
 {
 public:
-    static details::spdlogger& instance()
+    static SpdLoggerGuard create_logger(const LogConfig& config)
     {
-        return logger_;
+        return SpdLoggerGuard(new details::SpdLogger(config));
     }
 private:
-    spd_factory()=delete;
-    ~spd_factory()=delete;
-
-    static details::spdlogger logger_;
+    SpdFactory()=delete;
+    ~SpdFactory()=delete;
 };
 
 } // logger_lib
