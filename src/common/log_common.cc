@@ -30,7 +30,7 @@ int set_cpu_affinity(pthread_t* pid_list, size_t pidnum)
     ncpus = get_max_number_of_cpus();
 	if (ncpus <= 0)
 	{
-        fprintf(stderr, "failed to get cpu nums");
+        fprintf(stderr, "Failed to get cpu nums\n");
         return -1;
     }
     size_t setsize;
@@ -38,12 +38,12 @@ int set_cpu_affinity(pthread_t* pid_list, size_t pidnum)
     cpu_set_t *set = cpuset_alloc(ncpus, &setsize, &nbits);
     if(set == NULL)
     {
-        fprintf(stderr, "failed to alloc cpuset");
+        fprintf(stderr, "Failed to alloc cpuset\n");
         return -1;
     }
     if(cpulist_parse(cpulist_env, set, setsize, 0))
     {
-        fprintf(stderr, "failed to parse cpu list");
+        fprintf(stderr, "Failed to parse cpu list\n");
         return -1;
     }
     return do_taskset(setsize, set, pid_list, pidnum);

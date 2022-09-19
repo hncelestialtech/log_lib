@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
 project(log_test)
-
+add_compile_options(-O0 -g)
 add_executable(test_spd test_spdlog.cc)
-target_include_directories(test_spd PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../output/include)
-target_link_directories(test_spd PRIVATE ${CMAKE_CURRENT_LIST_DIR}/..//output/lib)
-target_link_libraries(test_spd PRIVATE spdlog_lib pthread)
+target_include_directories(test_spd PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../output/include/log_lib)
+target_include_directories(test_spd PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../jsoncpp/include)
+target_link_directories(test_spd PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../output/lib)
+target_link_directories(test_spd PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../build/lib)
+target_link_libraries(test_spd PRIVATE spdlog_lib jsoncpp pthread)

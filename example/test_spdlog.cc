@@ -2,7 +2,8 @@
 
 int main()
 {
-    SET_LOG_LEVEL(DEBUG);
-    LOG(DEBUG, "hello world");
+    LOG(DEBUG, "hello world {}", 1);
+    while(true)
+        ;
     return 0;
 }

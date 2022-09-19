@@ -50,11 +50,17 @@ elseif (${LOGGER} STREQUAL SPDLOGGER)
      list(APPEND src ${spdlog_src})
 endif()
 
+message(STATUS "BUILD LIB ${CMAKE_BINARY_DIR}")
+
 if (${LOGGER} STREQUAL "SPDLOGGER")
      add_library(spdlog_lib STATIC ${src})
      add_library(spdlog_lib_s SHARED ${src})
      target_link_libraries(spdlog_lib PRIVATE pthread)
      target_link_libraries(spdlog_lib_s PRIVATE pthread)
+     target_include_directories(spdlog_lib_s PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../jsoncpp/include)
+     target_link_libraries(spdlog_lib_s PRIVATE ${CMAKE_BINARY_DIR}/lib/libjsoncpp.so)
+     target_include_directories(spdlog_lib PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../jsoncpp/include)
+     target_link_libraries(spdlog_lib PRIVATE ${CMAKE_BINARY_DIR}/lib/libjsoncpp.a)
 endif ()
 
 set_target_properties(spdlog_lib_s PROPERTIES VERSION 0.0.0 SOVERSION 0)

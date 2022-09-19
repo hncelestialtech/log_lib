@@ -32,20 +32,20 @@ do {    \
     SYNC;  \
 } while(0)
 
-#define _SPD_ASYNC_LOG(log_level,...) logger_lib::details::spd_factory::instance().getLog()->log(log_level, __VA_ARGS__)
+#define _SPD_ASYNC_LOG(log_level,...) logger_lib::spd_factory::instance().getLog()->log(log_level, __VA_ARGS__)
 
 #define SYNC _SPD_SYNC
-#define _SPD_SYNC logger_lib::details::spd_factory::instance().getLog()->flush()
+#define _SPD_SYNC logger_lib::spd_factory::instance().getLog()->flush()
 
 #define SET_LOG_LEVEL(log_level)  _SPD_ASYNC_SET_LEVEL(log_level)
-#define _SPD_ASYNC_SET_LEVEL(log_level)  logger_lib::details::spd_factory::instance().getLog()->set_level(log_level) 
+#define _SPD_ASYNC_SET_LEVEL(log_level)  logger_lib::spd_factory::instance().getLog()->set_level(log_level) 
 
 using LoggerGuard = std::shared_ptr<spdlog::logger>;
 
 namespace logger_lib {
 
 namespace utils {
-    spdlog::level::level_enum get_log_level(std::string log_level)
+    inline spdlog::level::level_enum get_log_level(std::string log_level)
     {
         if (strncmp("debug", log_level.c_str(), 5) == 0)
             return DEBUG;
@@ -71,16 +71,23 @@ public:
     spdlogger():config_("./config.json")
     {
         std::string cpuset_bind = config_.cpuset_bind;
-        setenv("LogCPUSet", cpuset_bind.c_str(), 1);
+        if (cpuset_bind != config_.null_config) {
+            setenv("LogCPUSet", cpuset_bind.c_str(), 1);
+        }
 
+        char process_name[TASK_COMM_LEN];
+        int ret = pthread_getname_np(pthread_self(), process_name, TASK_COMM_LEN);
+        if (ret < 0)
+            fprintf(stderr, "Failed to get process name\n");
         std::string wall_time = logger_lib::utils::getWallClock();
         std::string log_file = config_.log_dir + "/" + std::string(process_name) + "-" + wall_time;
+        
         logger_ = spdlog::basic_logger_mt<spdlog::async_factory>(process_name, log_file);
         if(logger_ == nullptr)
         {
-            fprintf(stderr, "failed to create logger\n");
+            fprintf(stderr, "Failed to create logger\n");
         }
-        auto level = utils::get_log_level(ocnfig_.log_level);
+        auto level = utils::get_log_level(config_.log_level);
         logger_->set_level(level);
     }
     LoggerGuard getLog()
