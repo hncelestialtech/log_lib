@@ -6,7 +6,11 @@ int main()
     LOG(DEBUG, "hello world {}", 1);
     LOG_INIT("./logs", "debug");
     LOG(DEBUG, "hello world {}", 2);
-    // while(true)
-    //     ;
+    SET_LOG_LEVEL(DEBUG);
+    LOG(DEBUG, "Hello world {}", 3);
+    // SET_LOG_SYNC_LEVEL(DEBUG);
+    LOG(DEBUG, "Hello world {}", 4);
+    while(true)
+        ;
     return 0;
 }
