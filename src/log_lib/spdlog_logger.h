@@ -17,7 +17,10 @@
 #include "log_lib/log_config.h"
 
 #define SPDLOG_LEVEL spdlog::level::level_enum
-
+/**
+ * @brief Logger log level
+ * 
+ */
 #define DEBUG   SPDLOG_LEVEL::debug
 #define INFO    SPDLOG_LEVEL::info
 #define WARNING SPDLOG_LEVEL::warn
@@ -25,6 +28,17 @@
 
 extern std::once_flag log_init_flag;
 
+/**
+ * @brief API for using spdlogger
+ *  Logger must be initialized before LOG_INIT must be called, 
+ *  and the construction parameters of the LogConfig struct need to be passed
+ *  e.g LOG_INIT("./", info)
+ *  @param level
+ *  @param content 
+ *  e.g LOG(DEBUG, "hello world")
+ *  NOTE:
+ *  LOG_INIT is thread-safe and only loads once
+ */
 #define LOG_INIT(...)      \
 do {    \
     std::call_once(log_init_flag, [&]{  \
@@ -58,7 +72,10 @@ do {    \
 #define _SPD_SYNC logger_lib::logger->getLog()->flush()
 
 #define SET_LOG_LEVEL(log_level)  _SPD_ASYNC_SET_LEVEL(log_level)
-#define _SPD_ASYNC_SET_LEVEL(log_level)  logger_lib::spd_factory::instance().getLog()->set_level(log_level) 
+#define _SPD_ASYNC_SET_LEVEL(log_level)  do {   \
+    if (logger_lib::logger)   \
+        logger_lib::logger->getLog()->set_level(log_level); \
+} while(0)
 
 #define SET_LOG_SYNC_LEVEL(log_level)   do {    \
     logger_lib::details::flush_level = log_level;   \
