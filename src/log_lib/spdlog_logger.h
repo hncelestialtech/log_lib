@@ -91,9 +91,9 @@ namespace utils {
         else if (strncmp("info", log_level.c_str(), 4) == 0)
             return INFO;
         else if (strncmp("warn", log_level.c_str(), 4) == 0)
-            return INFO;
+            return WARNING;
         else if (strncmp("err", log_level.c_str(), 3) == 0)
-            return INFO;
+            return ERROR;
         else {
             fprintf(stderr, "Failed to parse log level %s, set level to INFO", log_level.c_str());
             return INFO;
