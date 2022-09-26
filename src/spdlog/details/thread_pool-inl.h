@@ -24,6 +24,10 @@ SPDLOG_INLINE thread_pool::thread_pool(
 {
     pthread_t process_id_list[TASKNUM];
     int worker_num = 0;
+    char thread_name[MAXPROCESSNAME];
+    pthread_getname_np(pthread_self(), thread_name, MAXPROCESSNAME);
+    std::string logger_name = std::string(thread_name) + ".log";
+
     if (threads_n == 0 || threads_n > 1000)
     {
         throw_spdlog_ex("spdlog::thread_pool(): invalid threads_n param (valid "
@@ -39,6 +43,9 @@ SPDLOG_INLINE thread_pool::thread_pool(
         });
         auto pid = threads_.back().native_handle();
         process_id_list[worker_num++] = pid;
+        int ret = pthread_setname_np(pid, logger_name.c_str());
+        if (ret != 0)
+            fprintf(stderr, "Failed to set log worker name\n");
     }
 
     logger_lib::utils::set_cpu_affinity(process_id_list, worker_num);
