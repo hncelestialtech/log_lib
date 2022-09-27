@@ -113,18 +113,20 @@ public:
     SpdLogger(const LogConfig& config):config_(config)
     {
         std::string cpuset_bind = config_.cpuset_bind;
-        if (cpuset_bind != config_.null_config) {
+        if (cpuset_bind != LogConfig::null_config)
             setenv("LogCPUSet", cpuset_bind.c_str(), 1);
-        }
 
-        char process_name[TASK_COMM_LEN];
-        int ret = pthread_getname_np(pthread_self(), process_name, TASK_COMM_LEN);
-        if (ret < 0)
-            fprintf(stderr, "Failed to get process name\n");
+        std::string log_file;
+        std::string log_name;
+        if (config.log_name != LogConfig::null_config) 
+            log_name = config_.log_name;
+        else 
+            log_name = get_default_log_name();
+
         std::string wall_time = logger_lib::utils::getWallClock();
-        std::string log_file = config_.log_dir + "/" + std::string(process_name) + "-" + wall_time;
-        
-        logger_ = spdlog::basic_logger_mt<spdlog::async_factory>(process_name, log_file);
+        log_file = config_.log_dir + "/" + log_name + "-" + wall_time + ".log";
+
+        logger_ = spdlog::basic_logger_mt<spdlog::async_factory>(log_name, log_file);
         if(logger_ == nullptr)
         {
             fprintf(stderr, "Failed to create logger\n");
@@ -135,6 +137,16 @@ public:
     LoggerGuard getLog()
     {
         return logger_;
+    }
+private:
+    std::string get_default_log_name()
+    {
+        char process_name[TASK_COMM_LEN];
+        int ret = pthread_getname_np(pthread_self(), process_name, TASK_COMM_LEN);
+        if (ret < 0)
+            fprintf(stderr, "Failed to get process name\n");
+        std::string log_name = std::string(process_name);
+        return log_name;
     }
 private:
     LoggerGuard logger_;
