@@ -9,7 +9,10 @@
 
 #include <pthread.h>
 #include <spdlog/common.h>
+
 #include <cassert>
+#include <string>
+
 #include "common/log_common.h"
 
 namespace spdlog {
@@ -24,9 +27,7 @@ SPDLOG_INLINE thread_pool::thread_pool(
 {
     pthread_t process_id_list[TASKNUM];
     int worker_num = 0;
-    char thread_name[MAXPROCESSNAME];
-    pthread_getname_np(pthread_self(), thread_name, MAXPROCESSNAME);
-    std::string logger_name = std::string(thread_name) + ".log";
+    std::string logger_prefix = "spdlog.worker";
 
     if (threads_n == 0 || threads_n > 1000)
     {
@@ -43,6 +44,7 @@ SPDLOG_INLINE thread_pool::thread_pool(
         });
         auto pid = threads_.back().native_handle();
         process_id_list[worker_num++] = pid;
+        auto logger_name = logger_prefix + std::to_string(i);
         int ret = pthread_setname_np(pid, logger_name.c_str());
         if (ret != 0)
             fprintf(stderr, "Failed to set log worker name\n");
