@@ -48,28 +48,10 @@ do {    \
 } while (0)
 
 #define LOG(log_level,...)  \
-do {    \
-    if (logger_lib::logger) {   \
-        if ((int)log_level >= (int)logger_lib::details::flush_level)  \
-            _SPD_SYNC_LOG(log_level,__VA_ARGS__);   \
-        else    \
-            _SPD_ASYNC_LOG(log_level, __VA_ARGS__); \
-    }   \
-} while (0)
-
-#define _SPD_SYNC_LOG(log_level,...)    \
-do {    \
-    _SPD_ASYNC_LOG(log_level,__VA_ARGS__);  \
-    SYNC;  \
-} while(0)
-
-#define _SPD_ASYNC_LOG(log_level,...) do {  \
+do {  \
     if (logger_lib::logger)   \
         logger_lib::logger->getLog()->log(log_level, __VA_ARGS__);   \
 } while (0)
-
-#define SYNC _SPD_SYNC
-#define _SPD_SYNC logger_lib::logger->getLog()->flush()
 
 #define SET_LOG_LEVEL(log_level)  _SPD_ASYNC_SET_LEVEL(log_level)
 #define _SPD_ASYNC_SET_LEVEL(log_level)  do {   \
@@ -78,7 +60,8 @@ do {    \
 } while(0)
 
 #define SET_LOG_SYNC_LEVEL(log_level)   do {    \
-    logger_lib::details::flush_level = log_level;   \
+    if (logger_lib::logger)     \
+        logger_lib::logger->set_flush_level(log_level);  \
 } while (0)
 
 namespace logger_lib {
@@ -103,8 +86,6 @@ namespace utils {
 
 namespace details {
 
-extern SPDLOG_LEVEL flush_level;
-
 class SpdLogger
 {
     using LoggerGuard = std::shared_ptr<spdlog::logger>;
@@ -123,20 +104,27 @@ public:
         else 
             log_name = get_default_log_name();
 
-        std::string wall_time = logger_lib::utils::getWallClock();
+        std::string wall_time = logger_lib::utils::get_wall_clock();
         log_file = config_.log_dir + "/" + log_name + "-" + wall_time + ".log";
 
         logger_ = spdlog::basic_logger_mt<spdlog::async_factory>(log_name, log_file);
         if(logger_ == nullptr)
         {
             fprintf(stderr, "Failed to create logger\n");
+            return;
         }
-        auto level = utils::get_log_level(config_.log_level);
-        logger_->set_level(level);
+        auto log_level = utils::get_log_level(config_.log_level);
+        logger_->set_level(log_level);
+        set_flush_level(INFO);
     }
     LoggerGuard getLog()
     {
         return logger_;
+    }
+
+    void set_flush_level(SPDLOG_LEVEL flush_level) {
+        flush_level_ = flush_level;
+        logger_->flush_on(flush_level_);
     }
 private:
     std::string get_default_log_name()
@@ -151,6 +139,8 @@ private:
 private:
     LoggerGuard logger_;
     LogConfig config_;
+
+    SPDLOG_LEVEL flush_level_;
 };
 
 } // detail
