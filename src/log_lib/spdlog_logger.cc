@@ -11,5 +11,4 @@ namespace logger_lib {
 SpdLoggerGuard logger;
 std::string LogConfig::null_config="";
 
-SPDLOG_LEVEL details::flush_level = SPDLOG_LEVEL::info;
 } // logger_lib

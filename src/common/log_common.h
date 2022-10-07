@@ -27,7 +27,7 @@ static inline std::string num2str(int time)
         return std::to_string(time);
 }
 
-static inline std::string getWallClock()
+static inline std::string get_wall_clock()
 {
     time_t now = time(NULL);
     tm* tm_t = localtime(&now);
