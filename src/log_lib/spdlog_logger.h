@@ -44,6 +44,7 @@ do {    \
     std::call_once(log_init_flag, [&]{  \
         logger_lib::LogConfig config{__VA_ARGS__};  \
         logger_lib::logger = std::move(logger_lib::SpdFactory::create_logger(config));  \
+        logger_lib::logger->getLog()->set_pattern("[%Y-%m-%d %H:%M:%S.%F][%n][%l] %v"); \
     }); \
 } while (0)
 
