@@ -11,7 +11,7 @@ namespace logger_lib {
 
 class LogConfig {
 public:
-    LogConfig(std::string level="info", std::string name=LogConfig::null_config, std::string dir="./", std::string cpuset=LogConfig::null_config):
+    LogConfig(std::string level="info", std::string name=LogConfig::null_config, std::string dir="./", std::string cpuset="0"):
         log_name(name), log_dir(dir), log_level(level), cpuset_bind(cpuset)
     {}
     static std::string null_config;
