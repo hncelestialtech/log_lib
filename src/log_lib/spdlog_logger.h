@@ -26,8 +26,6 @@
 #define WARNING SPDLOG_LEVEL::warn
 #define ERROR   SPDLOG_LEVEL::err
 
-extern std::once_flag log_init_flag;
-
 /**
  * @brief API for using spdlogger
  *  Logger must be initialized before LOG_INIT must be called, 
@@ -41,28 +39,24 @@ extern std::once_flag log_init_flag;
  */
 #define LOG_INIT(...)      \
 do {    \
-    std::call_once(log_init_flag, [&]{  \
-        logger_lib::LogConfig config{__VA_ARGS__};  \
-        logger_lib::logger = std::move(logger_lib::SpdFactory::create_logger(config));  \
-        logger_lib::logger->getLog()->set_pattern("[%Y-%m-%d %H:%M:%S.%F][%n][%l] %v"); \
-    }); \
+    logger_lib::details::SpdLogger::instance({__VA_ARGS__});    \
 } while (0)
 
 #define LOG(log_level,...)  \
 do {  \
-    if (logger_lib::logger)   \
-        logger_lib::logger->getLog()->log(log_level, __VA_ARGS__);   \
+    if(logger_lib::get_default_logger())    \
+        logger_lib::get_default_logger()->log(log_level, __VA_ARGS__);   \
 } while (0)
 
 #define SET_LOG_LEVEL(log_level)  _SPD_ASYNC_SET_LEVEL(log_level)
 #define _SPD_ASYNC_SET_LEVEL(log_level)  do {   \
-    if (logger_lib::logger)   \
-        logger_lib::logger->getLog()->set_level(log_level); \
+    if (logger_lib::get_default_logger())   \
+        logger_lib::get_default_logger()->set_level(log_level); \
 } while(0)
 
 #define SET_LOG_SYNC_LEVEL(log_level)   do {    \
-    if (logger_lib::logger)     \
-        logger_lib::logger->set_flush_level(log_level);  \
+    if (logger_lib::get_default_logger())     \
+        logger_lib::details::SpdLogger::instance().set_flush_level(log_level);  \
 } while (0)
 
 namespace logger_lib {
@@ -89,10 +83,26 @@ namespace details {
 
 class SpdLogger
 {
+public:
     using LoggerGuard = std::shared_ptr<spdlog::logger>;
 public:
+    LoggerGuard getLog()
+    {
+        return logger_;
+    }
+
+    void set_flush_level(SPDLOG_LEVEL flush_level) {
+        flush_level_ = flush_level;
+        logger_->flush_on(flush_level_);
+    }
+
+    static SpdLogger& instance(const LogConfig& config={}) {
+        static SpdLogger logger{config};
+        return logger;
+    }
+private:
 #define TASK_COMM_LEN  16
-    SpdLogger(const LogConfig& config):config_(config)
+    SpdLogger(const LogConfig& config):logger_(nullptr), config_(config)
     {
         std::string cpuset_bind = config_.cpuset_bind;
         if (cpuset_bind != LogConfig::null_config)
@@ -117,17 +127,11 @@ public:
         auto log_level = utils::get_log_level(config_.log_level);
         logger_->set_level(log_level);
         set_flush_level(INFO);
+        logger_->set_pattern("[%Y-%m-%d %H:%M:%S.%F][%n][%l] %v");
     }
-    LoggerGuard getLog()
-    {
-        return logger_;
-    }
+    SpdLogger(const SpdLogger&)=delete;
+    SpdLogger& operator=(const SpdLogger&)=delete;
 
-    void set_flush_level(SPDLOG_LEVEL flush_level) {
-        flush_level_ = flush_level;
-        logger_->flush_on(flush_level_);
-    }
-private:
     std::string get_default_log_name()
     {
         char process_name[TASK_COMM_LEN];
@@ -146,21 +150,10 @@ private:
 
 } // detail
 
-using SpdLoggerGuard = std::unique_ptr<details::SpdLogger>;
-
-extern SpdLoggerGuard logger;
-
-class SpdFactory
+inline details::SpdLogger::LoggerGuard get_default_logger()
 {
-public:
-    static SpdLoggerGuard create_logger(const LogConfig& config)
-    {
-        return SpdLoggerGuard(new details::SpdLogger(config));
-    }
-private:
-    SpdFactory()=delete;
-    ~SpdFactory()=delete;
-};
+    return details::SpdLogger::instance().getLog();
+}
 
 } // logger_lib
 

@@ -14,7 +14,7 @@ public:
     LogConfig(std::string level="info", std::string name=LogConfig::null_config, std::string dir="./", std::string cpuset="0"):
         log_name(name), log_dir(dir), log_level(level), cpuset_bind(cpuset)
     {}
-    static std::string null_config;
+    static constexpr const char* null_config = "";
     std::string log_name;
     std::string log_dir;
     std::string log_level;
