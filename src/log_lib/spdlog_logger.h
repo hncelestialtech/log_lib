@@ -127,6 +127,7 @@ private:
         auto log_level = utils::get_log_level(config_.log_level);
         logger_->set_level(log_level);
         set_flush_level(INFO);
+        logger_->set_pattern("[%Y-%m-%d %H:%M:%S.%F][%n][%l] %v");
     }
     SpdLogger(const SpdLogger&)=delete;
     SpdLogger& operator=(const SpdLogger&)=delete;
