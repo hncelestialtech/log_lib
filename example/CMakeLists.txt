@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(log_test)
-add_compile_options(-O3)
+add_compile_options(-O0 -g)
 add_executable(test_spd test_spdlog.cc)
 target_include_directories(test_spd PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../output/include/log_lib)
 target_link_directories(test_spd PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../output/lib)

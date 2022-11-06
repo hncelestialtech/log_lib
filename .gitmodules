@@ -1,6 +1,0 @@
-[submodule "src/tsc_clock"]
-	path = src/tsc_clock
-	url = git@github.com:hncelestialtech/tsc_clock.git
-[submodule "src/fmtlog/fmt"]
-	path = src/fmtlog/fmt
-	url = https://github.com/fmtlib/fmt

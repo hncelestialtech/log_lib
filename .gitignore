@@ -1,6 +1,7 @@
 /build
 /output
 /example/build
+/example/test_spdlog.cc.bak
 /.vscode
 /src/build
 *.o
