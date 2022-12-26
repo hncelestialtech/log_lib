@@ -12,7 +12,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    add_definitions("-g -O0")
+     add_definitions("-g -O0")
 else()
      add_definitions("-O3")
      if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
