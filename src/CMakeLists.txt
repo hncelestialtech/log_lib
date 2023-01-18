@@ -7,7 +7,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../output/lib)
 add_definitions("-Wall")
 
 if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug")
+    set(CMAKE_BUILD_TYPE "Release")
     message(STATUS "No CMAKE_BUILD_TYPE selected, config default value to ${CMAKE_BUILD_TYPE}")
 endif()
 
@@ -54,12 +54,8 @@ message(STATUS "BUILD LIB ${CMAKE_BINARY_DIR}")
 
 if (${LOGGER} STREQUAL "SPDLOGGER")
      add_library(spdlog_lib STATIC ${src})
-     add_library(spdlog_lib_s SHARED ${src})
      target_link_libraries(spdlog_lib PRIVATE pthread)
-     target_link_libraries(spdlog_lib_s PRIVATE pthread)
 endif ()
-
-set_target_properties(spdlog_lib_s PROPERTIES VERSION 0.0.0 SOVERSION 0)
 
 file(COPY ${CMAKE_CURRENT_LIST_DIR}/common/ DESTINATION ${CMAKE_CURRENT_LIST_DIR}/../output/include/log_lib/common
      FILES_MATCHING
