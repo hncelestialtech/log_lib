@@ -39,24 +39,25 @@
  */
 #define LOG_INIT(...)      \
 do {    \
-    logger_lib::details::SpdLogger::instance({__VA_ARGS__});    \
+    logger_lib::LogConfig config = {__VA_ARGS__};   \
+    logger_lib::spdlog_ptr = std::make_shared<logger_lib::details::SpdLogger>(config); \
 } while (0)
 
 #define LOG(log_level,...)  \
 do {  \
     if(logger_lib::get_default_logger())    \
-        logger_lib::get_default_logger()->log(log_level, __VA_ARGS__);   \
+        logger_lib::get_default_logger()->instance()->log(log_level, __VA_ARGS__);   \
 } while (0)
 
 #define SET_LOG_LEVEL(log_level)  _SPD_ASYNC_SET_LEVEL(log_level)
 #define _SPD_ASYNC_SET_LEVEL(log_level)  do {   \
     if (logger_lib::get_default_logger())   \
-        logger_lib::get_default_logger()->set_level(log_level); \
+        logger_lib::get_default_logger()->instance()->set_level(log_level); \
 } while(0)
 
 #define SET_LOG_SYNC_LEVEL(log_level)   do {    \
     if (logger_lib::get_default_logger())     \
-        logger_lib::details::SpdLogger::instance().set_flush_level(log_level);  \
+        logger_lib::get_default_logger()->set_flush_level(log_level);  \
 } while (0)
 
 namespace logger_lib {
@@ -80,27 +81,11 @@ namespace utils {
 }
 
 namespace details {
-
 class SpdLogger
 {
 public:
     using LoggerGuard = std::shared_ptr<spdlog::logger>;
 public:
-    LoggerGuard getLog()
-    {
-        return logger_;
-    }
-
-    void set_flush_level(SPDLOG_LEVEL flush_level) {
-        flush_level_ = flush_level;
-        logger_->flush_on(flush_level_);
-    }
-
-    static SpdLogger& instance(const LogConfig& config={}) {
-        static SpdLogger logger{config};
-        return logger;
-    }
-private:
 #define TASK_COMM_LEN  16
     SpdLogger(const LogConfig& config):logger_(nullptr), config_(config)
     {
@@ -141,6 +126,15 @@ private:
         std::string log_name = std::string(process_name);
         return log_name;
     }
+
+    void set_flush_level(SPDLOG_LEVEL flush_level) {
+        flush_level_ = flush_level;
+        logger_->flush_on(flush_level_);
+    }
+
+    LoggerGuard instance() {
+        return logger_;
+    }
 private:
     LoggerGuard logger_;
     LogConfig config_;
@@ -150,9 +144,12 @@ private:
 
 } // detail
 
-inline details::SpdLogger::LoggerGuard get_default_logger()
+using SpdLogPtr = std::shared_ptr<details::SpdLogger>;
+inline SpdLogPtr spdlog_ptr{nullptr};
+
+inline SpdLogPtr get_default_logger()
 {
-    return details::SpdLogger::instance().getLog();
+    return spdlog_ptr;
 }
 
 } // logger_lib
